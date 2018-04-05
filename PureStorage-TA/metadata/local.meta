@@ -1,0 +1,12 @@
+[app/install/install_source_checksum]
+version = 7.0.0
+modtime = 1512723598.533373100
+
+[inputs/PureStorage_rest%3A%2F%2Fpratik]
+owner = admin
+version = 7.0.0
+modtime = 1511434872.613151200
+
+[inputs/PureStorage_rest%3A%2F%2FPure_storage]
+version = 7.0.0
+modtime = 1512725139.107186700

@@ -1,0 +1,76 @@
+[history/.dummy_history]
+version = 6.5.1
+modtime = 1488269744.426429200
+
+[ui-prefs/search]
+version = 6.5.1
+modtime = 1488358676.781549800
+
+[views/volume_inventory]
+version = 6.5.1
+modtime = 1497943444.034141900
+
+[views/Host_Inventory]
+version = 6.5.1
+modtime = 1488286262.875193700
+
+[views/Array_Inventory]
+version = 6.5.1
+modtime = 1488371450.356719500
+
+[]
+access = read : [ * ], write : [ * ]
+export = none
+version = 6.5.1
+modtime = 1488372997.169011500
+
+[views/array_inventory]
+version = 6.5.1
+modtime = 1497943102.735270200
+
+[nav/default]
+version = 6.5.1
+modtime = 1490268860.007401700
+
+[views/log_inventory]
+version = 6.5.1
+modtime = 1496985716.543784600
+
+[views/PureStorage-App]
+version = 6.5.1
+modtime = 1496985602.658625500
+
+[datamodels/Array]
+access = read : [ * ]
+export = system
+owner = admin
+version = 6.5.1
+modtime = 1490780610.375602300
+
+[models/Array]
+access = read : [ * ]
+export = system
+owner = admin
+version = 6.5.1
+modtime = 1490780610.394929600
+
+[views/protection_inventory]
+version = 6.5.1
+modtime = 1498551132.217045200
+
+[app/install/state]
+version = 6.5.1
+modtime = 1490937039.173846000
+
+[views/host_inventory]
+version = 6.5.1
+modtime = 1496985737.085738300
+
+[inputs/PureStorage_rest%3A%2F%2Ftest1]
+owner = admin
+version = 6.5.1
+modtime = 1493029556.806143400
+
+[app/install/install_source_checksum]
+version = 6.5.1
+modtime = 1497936504.906535800

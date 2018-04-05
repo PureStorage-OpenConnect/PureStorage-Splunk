@@ -1,0 +1,292 @@
+<form>
+  <label>Volume Inventory</label>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="dropdown" token="array" searchWhenChanged="true">
+      <label>Select Array</label>
+      <fieldForLabel>array_name</fieldForLabel>
+      <fieldForValue>host</fieldForValue>
+      <search>
+        <query>sourcetype="purestorage_rest" source="array" | dedup host | fields + host array_name</query>
+      </search>
+      <selectFirstChoice>true</selectFirstChoice>
+    </input>
+    <input type="dropdown" token="volume" searchWhenChanged="true">
+      <label>Select volume</label>
+      <fieldForLabel>name</fieldForLabel>
+      <fieldForValue>name</fieldForValue>
+      <search>
+        <query>sourcetype="purestorage_rest" source="Volumes" AND host=$array$ | dedup name | fields + name</query>
+      </search>
+      <selectFirstChoice>true</selectFirstChoice>
+    </input>
+    <input type="time" token="timeframe" searchWhenChanged="true">
+      <label>Select Time frame</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="radio" token="dummy" searchWhenChanged="true">
+      <label>Show Help:</label>
+      <default>No</default>
+      <choice value="No">No</choice>
+      <choice value="Yes">Yes</choice>
+      <change>
+        <condition value="No">
+          <unset token="showhelp"></unset>
+        </condition>
+        <condition value="Yes">
+          <set token="showhelp">awwwyeah</set>
+        </condition>
+      </change>
+    </input>
+  </fieldset>
+  <row>
+    <panel depends="$showhelp$">
+      <html>
+        <p>
+          <pre> To Filter your results
+      1. Select Array             : Select array for which result to be populated.
+      2. Select Volume            : Select volume for which result to be populated.
+      3. Select time frame        : Select time window for events by earliest and latest.
+      </pre>
+        </p>
+        </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Allocation</title>
+      <chart>
+        <search>
+          <query>sourcetype="purestorage_rest"  source="Volumes" host=$array$ name=$volume$ | where isnotnull(volumes) and isnotnull(snapshots) | head 1  |  eval  volume_used=(volumes/1024/1024/1024), snapshot_used=(snapshots/1024/1024/1024), free=((size-total)/1024/1024/1024) | table volume_used , snapshot_used,  free | rename volume_used as Volumes, snapshot_used as "Snapshots", shared_space_used as "Shared" , free as "Free Space" | transpose | rename "row 1" as "Size in GB", column as "Volume Type"</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.seriesColors">[ "0x9F49F6", "0x5AB0EE",  "0xD99E00",  "0x00C4C6"]</option>
+        <option name="height">184</option>
+      </chart>
+      <single>
+        <title>Capacity</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Volumes host=$array$  name=$volume$ | where isnotnull(size) | head 1  | eval  total_used=case( 
+     size&gt;=(1024*1024*1024*1024),round(size/(1024*1024*1024*1024),2)."TB",
+     size&gt;=(1024*1024*1024),round(size/(1024*1024*1024),2)."GB",
+     size&gt;=(1024*1024),round(size/(1024*1024),2)."MB",
+ size&gt;=1024,round(size/1024,2)."KB",
+ 1=1,size."B") | table total_used as "Total"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">0</option>
+      </single>
+      <single>
+        <title>Used Space</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Volumes host=$array$  name=$volume$ | where isnotnull(size) | head 1  | eval  total_used=case( 
+     total&gt;=(1024*1024*1024*1024),round(total/(1024*1024*1024*1024),2)."TB",
+     total&gt;=(1024*1024*1024),round(total/(1024*1024*1024),2)."GB",
+     total&gt;=(1024*1024),round(total/(1024*1024),2)."MB",
+ total&gt;=1024,round(total/1024,2)."KB",
+ 1=1,total."B") | table total_used as "Total"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">0</option>
+      </single>
+      <single>
+        <title>Data Reduction</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Volumes host=$array$ name=$volume$| head 1 | table data_reduction as "Data Reduction"</query>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">to 1</option>
+        <option name="useColors">0</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Performance Information(Avg)</title>
+      <single>
+        <title>IOPS</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="Volumes"  host=$array$  name=$volume$| where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) |eval read_iops=(reads_per_sec/1024), write_iops=(writes_per_sec/1024), read_write_iops=(read_iops + write_iops)  | stats avg(read_write_iops) as "Avg( Read + Write)"</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">K</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single>
+        <title>Bandwidth</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="Volumes"  host=$array$ name=$volume$ |  where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) | eval input_bandwidth=(input_per_sec/1024/1024), output_bandwidth=(output_per_sec/1024/1024), input_output_bandwidth=(input_bandwidth + output_bandwidth)   | stats avg(input_output_bandwidth) as "Avg( Input + Output)"</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">MB</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single>
+        <title>Latency (Read)</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="Volumes" host=$array$ name=$volume$ | where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) |eval read_latency=usec_per_read_op/1000, write_latency=usec_per_write_op/1000| stats avg(read_latency) as "Avg(Read)"</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">ms</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single>
+        <title>Latency (Write)</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="Volumes" host=$array$ name=$volume$ | where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) |eval read_latency=usec_per_read_op/1000, write_latency=usec_per_write_op/1000 | stats avg(write_latency) as "Avg(Write)"</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">ms</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Recent Alerts</title>
+      <table>
+        <search>
+          <query>sourcetype="purestorage_rest" source="logs_alerts" host=$array$|table id, component_name, component_type, current_severity, event|eval sort_chain=case(current_severity=="critical",1,current_severity=="warning",2,current_severity=="info",3)|sort by sort_chain| rename id as ID, component_name as "Component Name", component_type as "Component Type", current_severity as "Current Severity", event as Event | fields ID, "Component Name", "Component Type", "Current Severity", Event</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Allocation Trend</title>
+      <chart>
+        <search id="used_space_average_over_time">
+          <query>sourcetype="purestorage_rest" source="Volumes"  host=$array$ name=$volume$ | where isnotnull(total) and isnotnull(volumes) and isnotnull(snapshots) | eval total_used=round(total/1024/1024/1024, 2), volume_used=round(volumes/1024/1014/1024, 2), snapshot_used=round(snapshots/1024/1014/1024, 2) |trendline sma2(total_used) as "Total (GB)", sma2(snapshot_used) as "Snapshots (GB)", sma2(volume_used) as "Volumes (GB)"  | fields _time, total_used,volume_used, snapshot_used|rename total_used as "Total (GB)",volume_used as  "Volumes (GB)", snapshot_used as "Snapshots (GB)"</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.seriesColors">["#55C70C","#9F49F6", "#F01C8D"]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>IOPS Trend</title>
+      <chart>
+        <search>
+          <query>sourcetype="purestorage_rest" source="Volumes"  host=$array$ name=$volume$ | where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) | eval read_iops=round(reads_per_sec/1024, 2), write_iops=round(writes_per_sec/1024, 2), read_write_iops=round(read_iops + write_iops, 2) |    trendline sma2(read_iops) as "Read (K)", sma2(write_iops) as "Write (K)",sma2(read_write_iops) AS "Read + Write (K)" | fields _time, read_iops, write_iops,read_write_iops| rename read_iops as "Read (K)", write_iops as "Write (K)", read_write_iops as "Read + Write (K)"</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.seriesColors">["#55C70C","#9F49F6", "#F01C8D"]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Latency Trend</title>
+      <chart>
+        <search>
+          <query>sourcetype="purestorage_rest" source="Volumes" host=$array$ name=$volume$ | where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) |eval read_latency=round(usec_per_read_op/1000, 2), write_latency=round(usec_per_write_op/1000, 2) |trendline sma2(read_latency) as "Read (ms)", sma2(write_latency) AS "Write (ms)" | fields _time, read_latency, write_latency| rename read_latency as "Read (ms)", write_latency as "Write (ms)"</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.seriesColors">[#5AB0EE", "#FB5000"]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Bandwidth Trend</title>
+      <chart>
+        <search>
+          <query>sourcetype="purestorage_rest" source="Volumes"  host=$array$ name=$volume$ |  where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) | eval input_bandwidth=(input_per_sec/1024/1024), output_bandwidth=(output_per_sec/1024/1024), input_output_bandwidth=round((input_bandwidth + output_bandwidth), 2)  |  trendline sma2(input_bandwidth) as "Input (MB)", sma2(output_bandwidth) as "Output (MB)", sma2(input_output_bandwidth) as  "Input + Output (MB)" | fields _time, input_bandwidth, output_bandwidth, input_output_bandwidth| rename input_bandwidth as "Input (MB)", output_bandwidth as "Output (MB)", input_output_bandwidth as "Input + Output (MB)"</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.seriesColors">["#55C70C","#9F49F6", "#F01C8D"]</option>
+        <option name="height">197</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Data Reduction Trend</title>
+      <chart>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Volumes host=$array$ name=$volume$| where isnotnull(data_reduction)| eval data_reduction = round(data_reduction, 2)|trendline sma2("data_reduction") as "Data Reduction (to 1)" | fields _time, data_reduction| rename data_reduction as "Data Reduction (to 1)"</query>
+          <earliest>$timeframe.earliest$</earliest>
+          <latest>$timeframe.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.seriesColors">["#55C70C","#9F49F6", "#F01C8D"]</option>
+        <option name="height">197</option>
+      </chart>
+    </panel>
+  </row>
+</form>

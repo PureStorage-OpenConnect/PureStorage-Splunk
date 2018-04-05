@@ -1,0 +1,14 @@
+<nav search_view="search" color="#65A637">
+  <view name="PureStorage-App" default='true' />
+  <view name="search" />
+  <view name="reports" />
+  <view name="alerts" />
+  <view name="dashboards" />
+  <collection label="Inventory" >
+     <view name="volume_inventory" />
+     <view name="array_inventory" />
+    <view name="log_inventory"/>
+     <view name="host_inventory"/>
+      <view name="protection_inventory"/>
+   </collection>
+</nav>

@@ -1,0 +1,221 @@
+<form>
+  <label>Host Inventory</label>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="dropdown" token="array" searchWhenChanged="true">
+      <label>Select Array</label>
+      <fieldForLabel>array_name</fieldForLabel>
+      <fieldForValue>host</fieldForValue>
+      <search>
+        <query>sourcetype="purestorage_rest" source="array" | dedup host | fields + host array_name</query>
+      </search>
+      <selectFirstChoice>true</selectFirstChoice>
+    </input>
+    <input type="dropdown" token="host" searchWhenChanged="true">
+      <label>Select Host</label>
+      <fieldForLabel>name</fieldForLabel>
+      <fieldForValue>name</fieldForValue>
+      <search>
+        <query>sourcetype="purestorage_rest" source="hosts" AND host=$array$ | dedup name | fields + name</query>
+      </search>
+      <selectFirstChoice>true</selectFirstChoice>
+    </input>
+    <input type="radio" token="dummy" searchWhenChanged="true">
+      <label>Show Help:</label>
+      <default>No</default>
+      <choice value="No">No</choice>
+      <choice value="Yes">Yes</choice>
+      <change>
+        <condition value="No">
+          <unset token="showhelp"></unset>
+        </condition>
+        <condition value="Yes">
+          <set token="showhelp">awwwyeah</set>
+        </condition>
+      </change>
+    </input>
+  </fieldset>
+  <row>
+    <panel depends="$showhelp$">
+      <html>
+        <p>
+          <pre> To Filter your results
+      1. Select Array             : Select array for which result to be populated.
+      2. Select host              : Select host for which result to be populated.
+      </pre>
+        </p>
+        </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Configuration Information</title>
+      <single>
+        <title>Provisioned</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="hosts" host=$array$ name=$host$| dedup name| stats values(size) as Size| eval Size=case( 
+     Size&gt;=(1024*1024*1024*1024),round(Size/(1024*1024*1024*1024),2)."TB",
+     Size&gt;=(1024*1024*1024),round(Size/(1024*1024*1024),2)."GB",
+     Size&gt;=(1024*1024),round(Size/(1024*1024),2)."MB",
+ Size&gt;=1024,round(Size/1024,2)."KB",
+ 1=1,Size."B")</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">0</option>
+      </single>
+      <single>
+        <title>Volumes</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="hosts" host=$array$ name=$host$| dedup name| stats values(volumes) as Volumes| eval Volumes=case( 
+     Volumes&gt;=(1024*1024*1024*1024),round(Volumes/(1024*1024*1024*1024),2)."TB",
+     Volumes&gt;=(1024*1024*1024),round(Volumes/(1024*1024*1024),2)."GB",
+     Volumes&gt;=(1024*1024),round(Volumes/(1024*1024),2)."MB",
+ Volumes&gt;=1024,round(Volumes/1024,2)."KB",
+ 1=1,Volumes."B")</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">0</option>
+      </single>
+      <single>
+        <title>Snapshots</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="hosts" host=$array$ name=$host$|  dedup name|stats values(snapshots) as Snapshots| eval Snapshots=case( 
+     Snapshots&gt;=(1024*1024*1024*1024),round(Snapshots/(1024*1024*1024*1024),2)."TB",
+     Snapshots&gt;=(1024*1024*1024),round(Snapshots/(1024*1024*1024),2)."GB",
+     Snapshots&gt;=(1024*1024),round(Snapshots/(1024*1024),2)."MB",
+ Snapshots&gt;=1024,round(Snapshots/1024,2)."KB",
+ 1=1,Snapshots."B")</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">0</option>
+      </single>
+      <single>
+        <title>Data Reduction</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="hosts" host=$array$ name=$host$|  dedup name|stats values(data_reduction) as data_reduction| rename data_reduction as "Rata Deduction"</query>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">to 1</option>
+        <option name="useColors">0</option>
+      </single>
+      <single>
+        <title>Total Reduction</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="hosts" host=$array$ name=$host$| dedup name| stats values(total_reduction) as total_reduction| rename total_reduction as "Total Reduction"</query>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">to 1</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+      </single>
+      <single>
+        <title>Thin Provisioning</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="hosts" host=$array$ name=$host$| dedup name| stats values(thin_provisioning) as thin_provisioning| rename thin_provisioning as "Thin Provisioning"</query>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">%</option>
+        <option name="useColors">0</option>
+      </single>
+      <single>
+        <title>Host Group</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="hosts"  host=$array$ name=$host$  | dedup name, vol, hgroup | stats values(hgroup) as "Host Group"</query>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">50</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">0</option>
+      </single>
+      <html>
+       <style type="text/css">
+         .single-value .single-result {
+          font-size: 20px;
+       }
+       </style>
+     </html>
+      <table>
+        <title>Host WWNs</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source="hosts"  host=$array$ name=$host$  | dedup host_wwn | table host_wwn|rename  host_wwn as WWN</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <refresh>10m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="WWN"></format>
+      </table>
+    </panel>
+    <panel>
+      <title>Volume Access</title>
+      <table>
+        <search>
+          <query>sourcetype="purestorage_rest" source="hosts" host=$array$ name=$host$  | dedup name, vol | table vol | rename vol as Volumes</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

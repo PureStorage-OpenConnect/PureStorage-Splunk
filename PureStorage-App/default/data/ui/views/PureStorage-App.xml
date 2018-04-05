@@ -1,0 +1,371 @@
+<form script="table_cell_highlighting.js" stylesheet="table_cell_highlighting.css">
+  <label>PureStorage-App</label>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <title>Allocation</title>
+      <table>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Array |eval Capacity=case( 
+     capacity&gt;=(1024*1024*1024*1024),round(capacity/(1024*1024*1024*1024),2)."TB",
+     capacity&gt;=(1024*1024*1024),round(capacity/(1024*1024*1024),2)."GB",
+     capacity&gt;=(1024*1024),round(capacity/(1024*1024),2)."MB",
+ capacity&gt;=1024,round(capacity/1024,2)."KB",
+ 1=1,capacity."B"), Total=case( 
+     total&gt;=(1024*1024*1024*1024),round(total/(1024*1024*1024*1024),2)."TB",
+     total&gt;=(1024*1024*1024),round(total/(1024*1024*1024),2)."GB",
+     total&gt;=(1024*1024),round(total/(1024*1024),2)."MB",
+ total&gt;=1024,round(total/1024,2)."KB",
+ 1=1,total."B"), "Snapshots"=case( 
+     snapshots&gt;=(1024*1024*1024*1024),round(snapshots/(1024*1024*1024*1024),2)."TB",
+     snapshots&gt;=(1024*1024*1024),round(snapshots/(1024*1024*1024),2)."GB",
+     snapshots&gt;=(1024*1024),round(snapshots/(1024*1024),2)."MB",
+ snapshots&gt;=1024,round(snapshots/1024,2)."KB",
+ 1=1,snapshots."B"), "Shared Space"=case( 
+     shared_space&gt;=(1024*1024*1024*1024),round(shared_space/(1024*1024*1024*1024),2)."TB",
+     shared_space&gt;=(1024*1024*1024),round(shared_space/(1024*1024*1024),2)."GB",
+     shared_space&gt;=(1024*1024),round(shared_space/(1024*1024),2)."MB",
+ shared_space&gt;=1024,round(shared_space/1024,2)."KB",
+ 1=1,shared_space."B"), "Volumes"=case( 
+     volumes&gt;=(1024*1024*1024*1024),round(volumes/(1024*1024*1024*1024),2)."TB",
+     volumes&gt;=(1024*1024*1024),round(volumes/(1024*1024*1024),2)."GB",
+     volumes&gt;=(1024*1024),round(volumes/(1024*1024),2)."MB",
+ volumes&gt;=1024,round(volumes/1024,2)."KB",
+ 1=1,volumes."B"), System=case( 
+     system&gt;=(1024*1024*1024*1024),round(system/(1024*1024*1024*1024),2)."TB",
+     system&gt;=(1024*1024*1024),round(system/(1024*1024*1024),2)."GB",
+     system&gt;=(1024*1024),round(system/(1024*1024),2)."MB",
+ system&gt;=1024,round(system/1024,2)."KB",
+ 1=1,system."B")|dedup host|table array_name, "Capacity", "Total", "Snapshots", "Shared Space", "Volumes", System, thin_provisioning, data_reduction, total_reduction| rename array_name as "Array Name", thin_provisioning as "Thin Provisioning", data_reduction as "Data Reduction", total_reduction as "Total Reduction"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <format type="number" field="Capacity (GB)">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Total (GB)">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Snapshots (GB)">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Shared Space (GB)">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Volumes (GB)">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="System">
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Total">
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Snapshots">
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Shared Space">
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Volumes">
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Data Reduction">
+          <option name="unit">to 1</option>
+        </format>
+        <format type="number" field="Thin Provisioning">
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="Total Reduction">
+          <option name="unit">to 1</option>
+        </format>
+        <format type="number" field="Capacity">
+          <option name="unit">TB</option>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Performance (Last 24 hours avg)</title>
+      <table>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Array | where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op)|eval read_iops=(reads_per_sec/1024), write_iops=(writes_per_sec/1024), read_write_iops=(read_iops + write_iops)| stats avg(read_iops) as "Avg Read", avg(write_iops) as "Avg Write", avg(read_write_iops) as "Avg (Read + Write)" by host, array_name| fields array_name, "Avg Read", "Avg Write", "Avg (Read + Write)"| rename array_name as "Array Name"| sort - "Avg (Read + Write)"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <format type="number" field="Avg Read">
+          <option name="unit">K</option>
+        </format>
+        <format type="number" field="Avg Write">
+          <option name="unit">K</option>
+        </format>
+        <format type="number" field="Avg Read + Write">
+          <option name="unit">KB</option>
+        </format>
+        <format type="number" field="Avg (Read + Write)">
+          <option name="unit">K</option>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Array Health Map</title>
+      <table>
+        <search>
+          <query>sourcetype="purestorage_rest" source=array| stats values(array_name) as Name by host| appendcols [search  source="logs_alerts"  current_severity=critical | stats count as "Critical" by host] | appendcols [search  source="logs_alerts" current_severity=warning | stats count as "Warning" by host] | appendcols [search  source="logs_alerts" current_severity=info | stats count as "Info" by host] | fields Name, Critical, Warning, Info| sort -Critical, -Warning, -Info</query>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <format type="color" field="Info">
+          <colorPalette type="list">[#65A637,#D93F3C]</colorPalette>
+          <scale type="threshold">100000000000000000</scale>
+        </format>
+        <format type="color" field="Warning">
+          <colorPalette type="list">[#F7BC38,#D93F3C]</colorPalette>
+          <scale type="threshold">100000000000000000</scale>
+        </format>
+        <format type="color" field="Critical">
+          <colorPalette type="list">[#D93F3C]</colorPalette>
+          <scale type="threshold"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Arrays by Used Space</title>
+      <table>
+        <search>
+          <query>sourcetype="purestorage_rest" source="Array"| dedup array_name |eval free=capacity - total, percentage = (total/ capacity) * 100, "Used Space"=case( 
+     total&gt;=(1024*1024*1024*1024),round(total/(1024*1024*1024*1024),2)."TB",
+     total&gt;=(1024*1024*1024),round(total/(1024*1024*1024),2)."GB",
+     total&gt;=(1024*1024),round(total/(1024*1024),2)."MB",
+ total&gt;=1024,round(total/1024,2)."KB",
+ 1=1,total."B"), Capacity=case( 
+     capacity&gt;=(1024*1024*1024*1024),round(capacity/(1024*1024*1024*1024),2)."TB",
+     capacity&gt;=(1024*1024*1024),round(capacity/(1024*1024*1024),2)."GB",
+     capacity&gt;=(1024*1024),round(capacity/(1024*1024),2)."MB",
+ capacity&gt;=1024,round(capacity/1024,2)."KB",
+ 1=1,capacity."B"), "Free Space"=case( 
+     free&gt;=(1024*1024*1024*1024),round(free/(1024*1024*1024*1024),2)."TB",
+     free&gt;=(1024*1024*1024),round(free/(1024*1024*1024),2)."GB",
+     free&gt;=(1024*1024),round(free/(1024*1024),2)."MB",
+ free&gt;=1024,round(free/1024,2)."KB",
+ 1=1,free."B") |table array_name, Capacity, "Used Space", "Free Space", percentage | rename array_name as "Array Name", percentage as Percentage| sort -Percentage</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="Capacity">
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Used Space">
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Free Space">
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Percentage">
+          <option name="unit">%</option>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Arrays by IOPS</title>
+      <table>
+        <search>
+          <query>sourcetype="purestorage_rest" source="Array"|dedup array_name|
+ where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) | eval read_iops=(reads_per_sec/1024), write_iops=(writes_per_sec/1024), read_write_iops=(read_iops + write_iops) |
+table array_name ,read_iops, write_iops, read_write_iops| sort -read_write_iops| rename array_name as Name, read_write_iops as "Read + Write", read_iops as "Read", write_iops as "Write"</query>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="Capacity"></format>
+        <format type="number" field="IOPS">
+          <option name="unit">KB</option>
+        </format>
+        <format type="number" field="Read IOPS">
+          <option name="unit">KB</option>
+        </format>
+        <format type="number" field="Write IOPS">
+          <option name="unit">KB</option>
+        </format>
+        <format type="number" field="Read + Write IOPS">
+          <option name="unit">KB</option>
+        </format>
+        <format type="number" field="Read + Write">
+          <option name="unit">K</option>
+        </format>
+        <format type="number" field="Write">
+          <option name="unit">K</option>
+        </format>
+        <format type="number" field="Read">
+          <option name="unit">K</option>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Arrays by Latency</title>
+      <table>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Array|dedup array_name| where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) |eval read_latency=(usec_per_read_op/1000), write_latency=(usec_per_write_op/1000)| table array_name, read_latency, write_latency|sort -read_latency, -write_latency| rename array_name as Name, read_latency as Read, write_latency as Write</query>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="Capacity"></format>
+        <format type="number" field="Read">
+          <option name="unit">ms</option>
+        </format>
+        <format type="number" field="Write">
+          <option name="unit">ms</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Select Array</title>
+      <input type="multiselect" token="array_tok" searchWhenChanged="true">
+        <label></label>
+        <fieldForLabel>array_name</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Array | dedup host | fields + host array_name</query>
+        </search>
+        <prefix>(</prefix>
+        <valuePrefix>host ="</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter> OR </delimiter>
+        <suffix>)</suffix>
+      </input>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Allocation Trend</title>
+      <chart>
+        <title>Based on summation of array values</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Array $array_tok$ |eval total=round(total/1024/1024/1024,2)| bucket _time span=1s |stats sum(total) AS "Total (GB)" by  time|trendline sma2(total) as "Total (GB)"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.seriesColors">["#55C70C","#9F49F6", "#F01C8D", "FB5000"]</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.layout.splitSeries">0</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>IOPS Trend</title>
+      <chart>
+        <title>Based on summation of array values</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Array  $array_tok$| 
+where isnotnull(reads_per_sec) and isnotnull(writes_per_sec) | 
+eval read_iops=(reads_per_sec/1024), write_iops=(writes_per_sec/1024), read_write_iops=round((read_iops + write_iops), 2) | bucket _time span=1s|stats sum(read_write_iops) AS "Read + Write (K)" by time|trendline sma2("Read + Write") as "Read + Write (K)"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.layout.splitSeries">0</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Latency Trend</title>
+      <chart>
+        <title>Based on summation of array values</title>
+        <search>
+          <query>sourcetype=purestorage_rest source=array  $array_tok$| where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) |eval read_latency=round(usec_per_read_op/1000, 2), write_latency=round(usec_per_write_op/1000, 2)| bucket _time span=1s|stats sum(read_latency) AS "Read (ms)", sum(write_latency) as "Write (ms)" by time|trendline sma2(Read) as "Read (ms)", sma10(Write) as "Write (ms)"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.seriesColors">["#FB5000", "#5AB0EE"]</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.layout.splitSeries">0</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Bandwidth Trend</title>
+      <chart>
+        <title>Based on summation of array values</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Array  $array_tok$ | where isnotnull(usec_per_read_op) and isnotnull(usec_per_write_op) | eval input_bandwidth=round(input_per_sec/1024/1024, 2), output_bandwidth=round(output_per_sec/1024/1024, 2), input_output_bandwidth=(input_bandwidth + output_bandwidth) |bucket _time span=1s |stats sum(input_output_bandwidth) AS "Input + Output (MB)" by time|trendline sma2("Input + Output") as "Input + Output (MB)"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.seriesColors">["#55C70C","#9F49F6", "#F01C8D"]</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.layout.splitSeries">0</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Data Reduction Trend</title>
+      <chart>
+        <title>Based on average of array values</title>
+        <search>
+          <query>sourcetype="purestorage_rest" source=Array $array_tok$ 
+| bucket _time span=1s |eval data_reduction=round(data_reduction, 2)|stats avg(data_reduction) AS "Data Reduction ( to 1)" by  time|trendline sma2(total) as "Data Reduction ( to 1)"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.seriesColors">["#55C70C","#9F49F6", "#F01C8D"]</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.layout.splitSeries">0</option>
+      </chart>
+    </panel>
+  </row>
+</form>
